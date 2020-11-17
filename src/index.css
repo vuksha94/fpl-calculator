@@ -1,0 +1,166 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
+    monospace;
+}
+
+.text-danger {
+  text: red;
+  font-weight: bold;
+}
+
+
+#root .form-control.is-invalid,
+.was-validated .form-control:invalid {
+  border-color: #dc3545;
+  background-image: none !important;
+}
+#root .form-control.is-valid,
+.was-validated .form-control:valid {
+  border-color: #28a745;
+  background-image: none !important;
+}
+
+#root .container {
+  padding: 20px 0;
+}
+
+#root #navbar-rent-a-car a {
+  color: white;
+}
+#root #navbar-rent-a-car a:hover {
+  background-color: #898e92;
+}
+#root .text-bold {
+  font-weight: bold;
+}
+
+#root .option-choosetime {
+  width: auto;
+}
+
+.flex-container {
+  display: flex;
+}
+.flex-container-column {
+  width: 200px;
+  display: flex;
+  flex-direction: column;
+  margin: 0 auto;
+  border: 2px solid black;
+}
+.bg-white {
+  background-color: white;
+}
+.bg-red {
+  background-color: red;
+}
+.flex-grow-1 {
+  flex-basis: 25%;
+}
+.flex-grow-2 {
+  flex-basis: 50%;
+}
+.calc-btn {
+  border: 1px solid black;
+  padding: 5px;
+  font-size: 16px;
+  font-weight: bold;
+  color: black;
+  text-align: center;
+}
+.calc-display {
+  padding: 8px;
+}
+
+.cls{
+  color:green;
+}
+
+/* FPL */
+
+.player-table,
+.player-row {
+  display: flex;
+  flex-direction: column;
+}
+
+.player-row-stats {
+  display: flex;
+}
+.fpl-search {
+  text-align: center;
+}
+
+#root #indicator-div {
+  position: relative;
+  width: 100%;
+  height: 30px;
+  border: 1px solid grey;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 16px;
+  font-weight: bold;
+  
+}
+
+#root #indicator-filled-div {
+  height: 30px;
+  position: relative;
+  background-color: grey;
+}
+
+#root #text-indicator {
+  height: 30px;
+  position: absolute;
+  left: 50%;
+  top: 0;
+}
+
+#root table tbody tr:nth-child(even) {
+  background-color: #f4f6f8;
+}
+
+#root table tbody tr:hover {
+  background-color: rgb(182, 175, 175);
+}
+
+#root .loader {
+  border: 8px solid rgb(182, 175, 175);
+  border-top: 8px solid lightblue;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg);}
+  to { transform: rotate(360deg);}
+}
+
+#root .text-bold {
+  font-weight: bold;
+  animation: changeColor 1s;
+  background-color: lightgreen;
+}
+@keyframes changeColor {
+  from {background-color: #fff}
+  to {background-color: lightgreen;}
+}
+
+#root .loader-col {
+  margin-left: calc(50% - 40px);
+}
+
+#root .cursor-pointer {
+  cursor: pointer;
+}
