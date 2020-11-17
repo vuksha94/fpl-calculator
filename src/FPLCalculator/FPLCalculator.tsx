@@ -403,8 +403,14 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
         );
     }
     private printServerErrorMsg() {
-        alert('Server error occured. Data may be invalid.');
-        this.setServerError(false);
+        return (
+            <div className="row">
+                <div className="col-sm-12">
+                    <span className="text-danger">Server error occured. Data may be invalid.</span>
+                </div>
+            </div>
+        )
+
     }
 
     private toggleSortStartXI() {
@@ -425,6 +431,7 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
     }
 
     private printPlayersPercentage() {
+        console.log('server error: ' + this.state.serverError);
         if (this.state.playersXIPercentageArray.length) {
             return (
                 <>
@@ -519,15 +526,18 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
                 </div>
                 <div className="row">
                     <div className="col-sm-12">
-                        {!this.state.loading && totalNumberOfManagers > 0 &&
+                        {!this.state.loading && !this.state.serverError && totalNumberOfManagers > 0 &&
                             <span className="text-bold ">
                                 Total number of managers:{totalNumberOfManagers}
                             </span>
                         }
                     </div>
                 </div>
-                <div className="row">
+                <>
                     {this.state.serverError && this.printServerErrorMsg()}
+                </>
+                <div className="row">
+
                     {!this.state.loading && this.printPlayersPercentage()}
                     {this.state.loading && this.printLoadingBar()}
                 </div>
