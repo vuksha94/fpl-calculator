@@ -5,6 +5,7 @@ import { Select } from './Select';
 import $ from 'jquery';
 import { PlayerInfoModal } from './PlayerInfoModal';
 import { Loader } from './Loader';
+import { Search } from './Search';
 
 export interface PlayersAndGWInfo {
     players: Player[];
@@ -30,6 +31,8 @@ export interface Player {
     percentageXI?: number;
     percentageSub?: number;
     percentageCaptain?: number;
+
+    show?: boolean; // added for filterig purposes
 }
 
 export class Manager {
@@ -65,6 +68,8 @@ interface StateType {
     loadingFullness: number;
     playerInfoClicked?: Player;
     playersXISorted?: 'desc' | 'asc';
+
+    searchValue: string;
 }
 
 
@@ -85,7 +90,8 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
             serverError: false,
             numberOfManagers: 100,
             leagueCode: 64284,
-            loadingFullness: 0
+            loadingFullness: 0,
+            searchValue: "",
         };
 
 
@@ -114,7 +120,7 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
 
         this.getAllPlayersAndGWInfo()
             .then(data => {
-                console.log('getAllPlayersAndGWInfo response')
+                console.log('currentGW: ' + data!.currentGW)
                 this.setAllPlayersInfoInState(data!.players);
                 this.setCurrentGWInState(data!.currentGW);
             });
@@ -147,6 +153,7 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
             const player = this.state.allPlayersInfo.find(p => p.id === id);
             player!.percentageXI = percentage;
             player!.countXI = cnt;
+            player!.show = true;
             playersXIPercentageArray = [...playersXIPercentageArray, player!];
         });
         const sortedXI = playersXIPercentageArray.sort((a, b) => b.percentageXI! - a.percentageXI!);
@@ -161,6 +168,7 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
             const player = this.state.allPlayersInfo.find(p => p.id === id);
             player!.percentageCaptain = percentage;
             player!.countCaptain = cnt;
+            player!.show = true;
             playersCaptainPercentageArray = [...playersCaptainPercentageArray, player!];
         });
         const sortedCaptains = playersCaptainPercentageArray.sort((a, b) => b.percentageCaptain! - a.percentageCaptain!);
@@ -381,9 +389,15 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
         ($('#playerInfoModal') as any).modal('show');
     }
 
+    private setSearchValueInState(searchValue: string) {
+        this.setState(Object.assign({ ...this.state }, {
+            searchValue
+        }));
+    }
 
     private printPlayerXIRow = (p: Player, idx: number, arr: Player[]) => {
         return (
+            p.show &&
             <tr key={p.id} onClick={() => this.playerRowClicked(p)}>
                 <td>{idx + 1}.</td>
                 <td>{p.web_name}</td>
@@ -406,7 +420,7 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
         return (
             <div className="row">
                 <div className="col-sm-12">
-                    <span className="text-danger">Server error occured. Data may be invalid.</span>
+                    <span className="text-danger">Server error occured. Calculate again.</span>
                 </div>
             </div>
         )
@@ -435,7 +449,6 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
         if (this.state.playersXIPercentageArray.length) {
             return (
                 <>
-
                     <div className="col-sm-6">
                         <table className="table table-bordered">
                             <thead>
@@ -474,6 +487,23 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
         }
     }
 
+    private onSearchInputChange = (value: string) => {
+        this.setSearchValueInState(value);
+        this.filterPlayersXI(value);
+    }
+
+    private filterPlayersXI(name: string) {
+        const filteredPlayersXIArray =
+            this.state.playersXIPercentageArray.map(p => {
+                if (p.web_name.toLowerCase().includes(name.toLocaleLowerCase())) {
+                    return { ...p, show: true };
+                } else {
+                    return { ...p, show: false };
+                }
+            });
+        this.setPlayersXIPercentageArray(filteredPlayersXIArray);
+    }
+
     private printLoadingBar() {
         //return <LoadIndicator fullness={this.state.loadingFullness} />;
         return (
@@ -483,6 +513,20 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
         )
     }
 
+    private printHeading(totalNumberOfManagers: number) {
+        return (
+            <div className="row">
+                <div className="col-sm-6">
+                    <span className="text-bold ">
+                        Total number of managers:{totalNumberOfManagers}
+                    </span>
+                </div>
+                <div className="col-sm-6">
+                    <Search placeholder={"Player Name..."} value={this.state.searchValue} onInputChange={this.onSearchInputChange} />
+                </div>
+            </div>
+        )
+    }
 
     private selectValueChanged = (numberOfManagers: string) => {
         this.setNumberOfManagersInState(Number(numberOfManagers));
@@ -526,11 +570,8 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
                 </div>
                 <div className="row">
                     <div className="col-sm-12">
-                        {!this.state.loading && !this.state.serverError && totalNumberOfManagers > 0 &&
-                            <span className="text-bold ">
-                                Total number of managers:{totalNumberOfManagers}
-                            </span>
-                        }
+                        {!this.state.loading && !this.state.serverError &&
+                            totalNumberOfManagers > 0 && this.printHeading(totalNumberOfManagers)}
                     </div>
                 </div>
                 <>
