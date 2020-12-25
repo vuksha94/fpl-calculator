@@ -4,7 +4,7 @@ import { Option } from './FPLCalculator';
 interface PropsType {
     options: Option[];
     defaultText: string;
-    value: number;
+    value: number | "";
     onSelectChange: (value: string) => void;
     description: string;
 }

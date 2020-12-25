@@ -1,10 +1,14 @@
 import React from 'react';
-import api from '../api/api';
+import api, { getUser } from '../api/api';
 import { Select } from './Select';
 
 import $ from 'jquery';
 import { PlayerInfoModal } from './PlayerInfoModal';
 import { Loader } from './Loader';
+import { Redirect } from 'react-router-dom';
+import { Leagues } from '../types/Leagues';
+import { User } from '../types/User';
+import { LeagueEntry } from '../types/LeagueEntry';
 
 export interface PlayersAndGWInfo {
     players: Player[];
@@ -45,7 +49,12 @@ export interface PlayersCountsInfo {
     playersCaptainsIds?: number[];
 }
 
+interface PropsType {
+    userLoggedIn: boolean;
+}
+
 interface StateType {
+    user: User | null;
     allPlayersInfo: Player[];
     managers: Manager[];
 
@@ -69,10 +78,16 @@ interface StateType {
 
 
 
-export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
-    constructor(props: Readonly<{}>) {
+export class FPLCalculator extends React.Component<PropsType, StateType> {
+    constructor(props: PropsType) {
         super(props);
+
+        const user: User | null = getUser();
+        const defaultLeague: number = (user?.leagues?.classic!)[0].id || 314; // default to 314 if undefined
+
+
         this.state = {
+            user: user,
             allPlayersInfo: [],
             managers: [],
             playersXICountMap: new Map<number, number>(),
@@ -84,7 +99,7 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
             loading: false,
             serverError: false,
             numberOfManagers: 100,
-            leagueCode: 64284,
+            leagueCode: defaultLeague,
             loadingFullness: 0
         };
 
@@ -111,29 +126,32 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
         this.resetData();
         console.log('getData()')
         this.setLoadingState(true);
+        
 
         this.getAllPlayersAndGWInfo()
             .then(data => {
-                console.log('getAllPlayersAndGWInfo response')
+                console.log('getAllPlayersAndGWInfo response'+data!.currentGW)
                 this.setAllPlayersInfoInState(data!.players);
                 this.setCurrentGWInState(data!.currentGW);
+
+                // ****treba optimalnije***** -> da se uporedo izvrsavaju getAllPlayersAndGWInfo()
+                // i getListOfManagers pa  da se onda izvrsava getListOfPlayers(managers)
+                this.getListOfManagers()
+                    .then(managers => {
+                        this.setManagersInState(managers);
+                        return this.getListOfPlayers(managers)
+                    })
+                    .then(playersCountsInfo => {
+                        this.setPlayersCountsInfoInMaps(playersCountsInfo);
+                        /*console.log(this.state.playersXICountMap);
+                        console.log(this.state.playersSubCountMap);
+                        console.log(this.state.playersCaptainCountMap);*/
+                        this.calculatePercentage();
+                        this.setLoadingState(false);
+                    })
             });
 
-        this.getListOfManagers()
-            .then(managers => {
-                this.setManagersInState(managers);
-                console.log(managers);
-                return this.getListOfPlayers(managers)
-            })
-            .then(playersCountsInfo => {
-                this.setPlayersCountsInfoInMaps(playersCountsInfo);
-                console.log(this.state.playersXICountMap);
-                console.log(this.state.playersSubCountMap);
-                console.log(this.state.playersCaptainCountMap);
-                this.calculatePercentage();
-                this.setLoadingState(false);
-            })
-        console.log('getData() end')
+        
     }
 
     private calculatePercentage() {
@@ -193,12 +211,14 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
         let playersXIIds: number[] = [];
         let playersSUBIds: number[] = [];
         let playersCaptainsIds: number[] = [];
-        console.log('managers start');
+        console.log('currentGW', currentGW);
         return new Promise<PlayersCountsInfo>(resolve => {
+            console.log('currentGW', currentGW);
 
             let requests: string[] = [];
             for (let idx in managers!) {
-                const url = `/entry/${managers[idx].entry}/event/${currentGW}/picks/`;
+                //const url = `/entry/${managers[idx].entry}/event/${currentGW}/picks/`;
+                const url = `/manager-picks/${managers[idx].entry}/${currentGW}/`;
                 requests.push(url);
             }
 
@@ -247,7 +267,8 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
         const leagueId = this.state.leagueCode; // overall league id
         let managers: Manager[] = [];
         for (let pageNumber = 1; pageNumber <= pages; ++pageNumber) {
-            const url = `leagues-classic/${leagueId}/standings/?page_standings=${pageNumber}`;
+            // const url = `leagues-classic/${leagueId}/standings/?page_standings=${pageNumber}`;
+            const url = `leagues-classic/${leagueId}/${pageNumber}/`;
             const res = await api(url, 'get');
             if (res.status === 'success') {
                 console.log(res.data)
@@ -488,6 +509,10 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
         this.setNumberOfManagersInState(Number(numberOfManagers));
     }
 
+    private selectedLeagueChanged = (leagueCode: string) => {
+        this.setLeagueCodeInState(Number(leagueCode));
+    }
+
     private leagueCodeChanged = (leagueCode: string) => {
         this.setLeagueCodeInState(Number(leagueCode));
     }
@@ -501,15 +526,32 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
             { value: 1000, text: "TOP 1000" },
             { value: 10000, text: "TOP 10K" },*/
         ];
+
+        const leagueEntries: LeagueEntry[] = this.state.user?.leagues?.classic!;
+        let leagueOptions: Option[] = [];
+        leagueEntries.forEach(league => leagueOptions.push({
+            value: league.id!,
+            text: league.name!
+        }));
         const totalNumberOfManagers = this.state.managers.length;
 
+        if (!this.props.userLoggedIn || this.state.serverError) {
+            return <Redirect to="/login" />;
+        }
         return (
+            
             <div className="container-fluid">
                 <div className="row">
                     <Select onSelectChange={this.selectValueChanged}
-                        defaultText="Select" options={fromOptions}
+                        defaultText="Select Sample" options={fromOptions}
                         value={this.state.numberOfManagers}
                         description="Sample" />
+                </div>
+                <div className="row">
+                    <Select onSelectChange={this.selectedLeagueChanged}
+                        defaultText="Select League" options={leagueOptions}
+                        value={this.state.leagueCode}
+                        description="League" />
                 </div>
                 <div className="row">
                     <div className="form-group">
