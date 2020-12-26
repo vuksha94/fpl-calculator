@@ -1,11 +1,14 @@
 import React from 'react';
 import api from '../api/api';
-import { Select } from './Select';
+import Select from './Select';
 
 import $ from 'jquery';
 import { PlayerInfoModal } from './PlayerInfoModal';
 import { Loader } from './Loader';
 import { Search } from './Search';
+import { connect } from 'react-redux';
+import { Dispatch, State } from '../redux/types';
+import { setNumberOfManagers } from '../redux/Manager/ManagerActions';
 
 export interface PlayersAndGWInfo {
     players: Player[];
@@ -72,10 +75,12 @@ interface StateType {
     searchValue: string;
 }
 
+export type Props = {
+    numberOfManagersReduxTest: number
+};
 
-
-export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
-    constructor(props: Readonly<{}>) {
+export class FPLCalculator extends React.Component<Props, StateType> {
+    constructor(props: Props) {
         super(props);
         this.state = {
             allPlayersInfo: [],
@@ -100,9 +105,9 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
     componentDidMount() {
         // this.getData();
     }
-    /*componentDidUpdate(prevProps: Readonly<{}>, prevState: StateType) {
-
-    }*/
+    componentDidUpdate(prevProps: Readonly<{}>, prevState: StateType) {
+        console.log(this.props.numberOfManagersReduxTest);
+    }
 
     private resetData() {
         this.setState(state => Object.assign({ ...state }, {
@@ -589,3 +594,23 @@ export class FPLCalculator extends React.Component<Readonly<{}>, StateType> {
         )
     }
 }
+
+const mapStateToProps = (state: State) => {
+    return {
+        numberOfManagersReduxTest: state.number
+    };
+};
+// obrisati
+const mapDispatchToProps = (dispatch: Dispatch) => {
+    return {
+        onTodoClick: () => {
+            dispatch(setNumberOfManagers(1));
+        }
+    };
+};
+
+const connector = connect(
+    mapStateToProps,
+    mapDispatchToProps
+);
+export default connector(FPLCalculator);
