@@ -1,3 +1,3 @@
 export const ApiConfig = {
-    API_URL: 'https://fantasy.premierleague.com/api/'
+    API_URL: 'http://localhost:8080/'
 };
